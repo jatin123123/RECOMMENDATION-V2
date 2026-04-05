@@ -49,7 +49,7 @@ class MusicRecommender:
         # Try multiple encodings
         for encoding in ["utf-8", "utf-8-sig", "latin-1", "cp1252"]:
             try:
-                self.tracks = pd.read_csv(tracks_path, encoding=encoding)
+                self.tracks = pd.read_csv(tracks_path, sep=',', encoding=encoding)
                 print(f"Successfully loaded with encoding: {encoding}")
                 break
             except Exception as e:
