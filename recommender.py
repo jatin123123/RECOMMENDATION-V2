@@ -41,8 +41,20 @@ class MusicRecommender:
         self.content_matrix = sparse.load_npz(f"{model_dir}/content_matrix.npz")
         self.nn_model = joblib.load(f"{model_dir}/nn_model.pkl")
         
-        # Load track data
-        self.tracks = pd.read_csv(f"{model_dir}/tracks.csv")
+        # Load track data (with encoding fallback for cross-platform compatibility)
+        try:
+            self.tracks = pd.read_csv(f"{model_dir}/tracks.csv", encoding="utf-8")
+        except UnicodeDecodeError:
+            self.tracks = pd.read_csv(f"{model_dir}/tracks.csv", encoding="utf-8-sig")
+        
+        # Debug: print columns if track_id not found
+        if "track_id" not in self.tracks.columns:
+            print(f"Available columns: {list(self.tracks.columns)}")
+            # Try to fix BOM issue - first column might have BOM prefix
+            first_col = self.tracks.columns[0]
+            if "track_id" in first_col:
+                self.tracks = self.tracks.rename(columns={first_col: "track_id"})
+        
         self.tracks["track_id"] = self.tracks["track_id"].astype(str)
         
         # Create track_id to index mapping

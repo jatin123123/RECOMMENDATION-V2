@@ -105,8 +105,8 @@ def train_content_model(df):
     joblib.dump(tfidf, "models/tfidf.pkl")
     joblib.dump(available_features, "models/feature_names.pkl")
     
-    # Save track metadata
-    df.to_csv("models/tracks.csv", index=False)
+    # Save track metadata (UTF-8 without BOM for cross-platform compatibility)
+    df.to_csv("models/tracks.csv", index=False, encoding="utf-8")
     
     print("Content-based model saved!")
     return content_matrix, nn_model
