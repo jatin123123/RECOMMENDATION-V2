@@ -41,18 +41,40 @@ class MusicRecommender:
         self.content_matrix = sparse.load_npz(f"{model_dir}/content_matrix.npz")
         self.nn_model = joblib.load(f"{model_dir}/nn_model.pkl")
         
-        # Load track data (with encoding fallback for cross-platform compatibility)
-        try:
-            self.tracks = pd.read_csv(f"{model_dir}/tracks.csv", encoding="utf-8")
-        except UnicodeDecodeError:
-            self.tracks = pd.read_csv(f"{model_dir}/tracks.csv", encoding="utf-8-sig")
+        # Load track data with multiple encoding attempts
+        tracks_path = f"{model_dir}/tracks.csv"
+        print(f"Loading tracks from: {tracks_path}")
+        print(f"File exists: {os.path.exists(tracks_path)}")
         
-        # Debug: print columns if track_id not found
+        # Try multiple encodings
+        for encoding in ["utf-8", "utf-8-sig", "latin-1", "cp1252"]:
+            try:
+                self.tracks = pd.read_csv(tracks_path, encoding=encoding)
+                print(f"Successfully loaded with encoding: {encoding}")
+                break
+            except Exception as e:
+                print(f"Failed with {encoding}: {e}")
+                continue
+        
+        print(f"Loaded {len(self.tracks)} rows")
+        print(f"Columns: {list(self.tracks.columns)}")
+        print(f"First column repr: {repr(self.tracks.columns[0])}")
+        
+        # Clean column names - remove any BOM or whitespace
+        self.tracks.columns = self.tracks.columns.str.strip()
+        self.tracks.columns = [col.replace('\ufeff', '') for col in self.tracks.columns]
+        
+        # If track_id still not found, try to find it
         if "track_id" not in self.tracks.columns:
-            print(f"Available columns: {list(self.tracks.columns)}")
-            # Try to fix BOM issue - first column might have BOM prefix
+            print(f"WARNING: track_id not in columns!")
+            # Check if first column contains track_id
             first_col = self.tracks.columns[0]
-            if "track_id" in first_col:
+            if "track_id" in first_col.lower():
+                print(f"Renaming '{first_col}' to 'track_id'")
+                self.tracks = self.tracks.rename(columns={first_col: "track_id"})
+            else:
+                # Last resort: assume first column is track_id
+                print(f"Assuming first column '{first_col}' is track_id")
                 self.tracks = self.tracks.rename(columns={first_col: "track_id"})
         
         self.tracks["track_id"] = self.tracks["track_id"].astype(str)
