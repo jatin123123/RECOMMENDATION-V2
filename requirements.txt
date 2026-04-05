@@ -1,0 +1,9 @@
+# Simple Music Recommendation System - Requirements
+# Only basic, well-known libraries
+
+streamlit
+pandas
+numpy
+scikit-learn
+scipy
+joblib
